@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -64,6 +65,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void createRefs() {
+        //fix for  exposed beyond app through ClipData.Item.getUri()
+        StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+        StrictMode.setVmPolicy(builder.build());
+        //fix over
         imageView = (ImageView) findViewById(R.id.selectedImage);
         textView = (TextView) findViewById(R.id.generated_tags);
         imageView.setOnClickListener(new View.OnClickListener() {
@@ -317,7 +322,9 @@ public class MainActivity extends AppCompatActivity {
                     Bitmap bitmap;
                     BitmapFactory.Options bitmapOptions = new BitmapFactory.Options();
                     bitmap = BitmapFactory.decodeFile(f.getAbsolutePath(), bitmapOptions);
-                    String path = android.os.Environment.getExternalStorageDirectory() + File.separator
+                    picturePath=f.getPath();
+                    imageView.setImageBitmap(bitmap);
+                    /*String path = android.os.Environment.getExternalStorageDirectory() + File.separator
                             + "Phoenix" + File.separator + "default";
                     f.delete();
                     OutputStream outFile = null;
@@ -335,7 +342,7 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     } catch (Exception e) {
                         e.printStackTrace();
-                    }
+                    }*/
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
