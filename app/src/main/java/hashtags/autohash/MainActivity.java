@@ -206,7 +206,7 @@ public class MainActivity extends AppCompatActivity {
 
         System.out.println("\nSending 'GET' request to URL : " + url);
         System.out.println("Response Code : " + responseCode);
-
+//res
         BufferedReader connectionInput = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 
         String jsonResponse = connectionInput.readLine();
