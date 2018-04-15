@@ -36,6 +36,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -50,18 +51,6 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         createRefs();
-        //FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        /*fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-                PostImageToImaggaAsync postImageToImaggaAsync = new PostImageToImaggaAsync();
-                postImageToImaggaAsync.execute();
-                /*GetTagFromImaggaAsync getTagFromImaggaAsyncobj = new GetTagFromImaggaAsync();
-                getTagFromImaggaAsyncobj.execute();*/
-        //}
-        //});
     }
 
     private void createRefs() {
@@ -86,7 +75,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             Log.i("imagga pre", "post photo");
-
         }
 
         @Override
@@ -184,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
         connection.setRequestProperty("Connection", "Keep-Alive");
         connection.setRequestProperty("User-Agent", "Android Multipart HTTP Client 1.0");
         connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-        connection.setRequestProperty("Authorization", "Basic YWNjX2RiZTI4OGQ3ZTlkOTQ5YjphYWJjNDE2MmI3YjdjYWFhNDcwOTc1Y2E0ZDJkZTdkNg==");
+        connection.setRequestProperty("Authorization", Constants.basic_auth);
 
         outputStream = new DataOutputStream(connection.getOutputStream());
         outputStream.writeBytes(twoHyphens + boundary + lineEnd);
@@ -234,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
 
     public String getTagFromImagga(String id) throws Exception {
 
-        String basicAuth = "YWNjX2RiZTI4OGQ3ZTlkOTQ5YjphYWJjNDE2MmI3YjdjYWFhNDcwOTc1Y2E0ZDJkZTdkNg==";//Base64.getEncoder().encodeToString(credentialsToEncode.getBytes(StandardCharsets.UTF_8));
+        String basicAuth = Constants.basic_auth;
 
         String endpoint_url = "https://api.imagga.com/v1/tagging";
         String image_url = id;
@@ -243,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
         URL urlObject = new URL(url);
         HttpURLConnection connection = (HttpURLConnection) urlObject.openConnection();
 
-        connection.setRequestProperty("Authorization", "Basic " + basicAuth);
+        connection.setRequestProperty("Authorization", basicAuth);
 
         int responseCode = connection.getResponseCode();
 
@@ -269,12 +257,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
@@ -324,25 +307,6 @@ public class MainActivity extends AppCompatActivity {
                     bitmap = BitmapFactory.decodeFile(f.getAbsolutePath(), bitmapOptions);
                     picturePath=f.getPath();
                     imageView.setImageBitmap(bitmap);
-                    /*String path = android.os.Environment.getExternalStorageDirectory() + File.separator
-                            + "Phoenix" + File.separator + "default";
-                    f.delete();
-                    OutputStream outFile = null;
-                    File file = new File(path, String.valueOf(System.currentTimeMillis()) + ".jpg");
-                    try {
-                        outFile = new FileOutputStream(file);
-                        picturePath=file.getPath();
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outFile);
-                        imageView.setImageBitmap(bitmap);
-                        outFile.flush();
-                        outFile.close();
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }*/
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
