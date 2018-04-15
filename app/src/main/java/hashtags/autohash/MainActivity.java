@@ -1,5 +1,8 @@
 package hashtags.autohash;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -18,8 +21,10 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -43,11 +48,13 @@ public class MainActivity extends AppCompatActivity {
 
     ImageView imageView = null;
     TextView textView = null;
-
+    Button copy = null,share=null;
+    Context mContext = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mContext = getApplicationContext();
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         createRefs();
@@ -60,14 +67,48 @@ public class MainActivity extends AppCompatActivity {
         //fix over
         imageView = (ImageView) findViewById(R.id.selectedImage);
         textView = (TextView) findViewById(R.id.generated_tags);
+        copy= (Button)findViewById(R.id.copy);
+        share=(Button)findViewById(R.id.share);
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 selectImage();
             }
         });
-    }
+        copy.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                copyToClipboard();
+            }
+        });
+        share.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                shareIntent();
+            }
+        });
 
+    }
+    private void copyToClipboard(){
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = ClipData.newPlainText(getStringFromResource(R.string.share_subject), textView.getText().toString());
+        clipboard.setPrimaryClip(clip);
+        showToast(getStringFromResource(R.string.copied));
+    }
+    private void shareIntent(){
+        String shareBody = textView.getText().toString();
+        Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
+        sharingIntent.setType("text/plain");
+        sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, getStringFromResource(R.string.share_title));
+        sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBody);
+        startActivity(Intent.createChooser(sharingIntent, getResources().getString(R.string.share_using)));
+    }
+    private void showToast(String message){
+        Toast.makeText(mContext,message,Toast.LENGTH_SHORT).show();
+    }
+    private String getStringFromResource(int id){
+        return getResources().getString(id);
+    }
     String returnid = null;
 
     public class PostImageToImaggaAsync extends AsyncTask<Void, Void, Void> {
@@ -81,9 +122,7 @@ public class MainActivity extends AppCompatActivity {
         protected Void doInBackground(Void... params) {
             try {
                 String response = postImageToImagga(picturePath);
-                Log.i("imagga", response);
                 JSONObject jsonObject = new JSONObject(response);
-                Log.i("imagga id", jsonObject.getJSONArray("uploaded").getJSONObject(0).getString("id"));
                 returnid = jsonObject.getJSONArray("uploaded").getJSONObject(0).getString("id");
                 //int age = jsonObject.getInt("age");
             } catch (Exception e) {
@@ -111,7 +150,6 @@ public class MainActivity extends AppCompatActivity {
         protected Void doInBackground(Void... params) {
             try {
                 final String response = getTagFromImagga(returnid);
-                Log.i("imagga tag", response);
                 runOnUiThread(new Runnable() {
 
                     @Override
@@ -234,17 +272,9 @@ public class MainActivity extends AppCompatActivity {
         connection.setRequestProperty("Authorization", basicAuth);
 
         int responseCode = connection.getResponseCode();
-
-        System.out.println("\nSending 'GET' request to URL : " + url);
-        System.out.println("Response Code : " + responseCode);
-//res
         BufferedReader connectionInput = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-
         String jsonResponse = connectionInput.readLine();
-
         connectionInput.close();
-
-        System.out.println(jsonResponse);
         return jsonResponse;
     }
 
