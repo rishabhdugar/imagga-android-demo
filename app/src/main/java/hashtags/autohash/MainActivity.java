@@ -53,7 +53,7 @@ import java.nio.charset.StandardCharsets;
 public class MainActivity extends AppCompatActivity {
 
     ImageView imageView = null;
-    TextView textView = null;
+    TextView textView = null,poweredText = null;
     Button copy = null,share=null;
     Context mContext = null;
     @Override
@@ -97,6 +97,14 @@ public class MainActivity extends AppCompatActivity {
         textView = (TextView) findViewById(R.id.generated_tags);
         copy= (Button)findViewById(R.id.copy);
         share=(Button)findViewById(R.id.share);
+        poweredText=(TextView)findViewById(R.id.powered_link);
+        poweredText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent browser= new Intent(Intent.ACTION_VIEW, Uri.parse("https://imagga.com/"));
+                startActivity(browser);
+            }
+        });
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
