@@ -1,19 +1,25 @@
 package hashtags.autohash;
 
+import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
 import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -55,9 +61,31 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mContext = getApplicationContext();
+        dlg = new ProgressDialog(this);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         createRefs();
+    }
+
+    private void requestPerms() {
+        ActivityCompat.requestPermissions(MainActivity.this,
+                new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.CAMERA},
+                1);
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 1: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    selectImage();
+                } else {
+                    Toast.makeText(MainActivity.this, getStringFromResource(R.string.perm_allow), Toast.LENGTH_SHORT).show();
+                }
+                return;
+            }
+        }
     }
 
     private void createRefs() {
@@ -72,7 +100,17 @@ public class MainActivity extends AppCompatActivity {
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                selectImage();
+                int MyVersion = Build.VERSION.SDK_INT;
+                if (MyVersion > Build.VERSION_CODES.LOLLIPOP_MR1) {
+                    if (checkIfAlreadyhavePermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) && checkIfAlreadyhavePermission(Manifest.permission.CAMERA)) {
+                        selectImage();
+                    }
+                    else{
+                        requestPerms();
+                }
+                }else{
+                    selectImage();
+                }
             }
         });
         copy.setOnClickListener(new View.OnClickListener() {
@@ -89,6 +127,14 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }
+    private boolean checkIfAlreadyhavePermission(String writeExternalStorage) {
+        int result = ContextCompat.checkSelfPermission(this, writeExternalStorage);
+        if (result == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        } else {
+            return false;
+        }
+    }
     private void copyToClipboard(){
         ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData clip = ClipData.newPlainText(getStringFromResource(R.string.share_subject), textView.getText().toString());
@@ -103,6 +149,23 @@ public class MainActivity extends AppCompatActivity {
         sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBody);
         startActivity(Intent.createChooser(sharingIntent, getResources().getString(R.string.share_using)));
     }
+    ProgressDialog dlg = null;
+    public void showProgress(String message) {
+        try {
+            dlg.setMessage(message);
+            dlg.show();
+        }catch (Exception e){
+
+        }
+    }
+    public void dismissProgress() {
+        try{
+            dlg.dismiss();
+        }
+        catch (Exception e){
+
+        }
+    }
     private void showToast(String message){
         Toast.makeText(mContext,message,Toast.LENGTH_SHORT).show();
     }
@@ -116,6 +179,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             Log.i("imagga pre", "post photo");
+            showProgress(getStringFromResource(R.string.analyzing));
         }
 
         @Override
@@ -137,6 +201,10 @@ public class MainActivity extends AppCompatActivity {
                 GetTagFromImaggaAsync getTagFromImaggaAsyncobj = new GetTagFromImaggaAsync();
                 getTagFromImaggaAsyncobj.execute();
             }
+            else {
+                dismissProgress();
+                somethingWentWrong();
+            }
         }
     }
 
@@ -144,6 +212,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
+
+            showProgress(getStringFromResource(R.string.getting_hashtags));
         }
 
         @Override
@@ -175,6 +245,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Void result) {
+            dismissProgress();
         }
     }
 
@@ -288,7 +359,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_exit) {
+            finish();
+            System.exit(0);
             return true;
         }
 
@@ -296,21 +369,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void selectImage() {
-        final CharSequence[] options = {"Take Photo", "Choose from Gallery", "Cancel"};
+        final CharSequence[] options = {getStringFromResource(R.string.take_photo),getStringFromResource(R.string.choose_gallery),getStringFromResource(R.string.cancel)};
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setTitle("Add Photo!");
+        builder.setTitle(getStringFromResource(R.string.add_photo));
         builder.setItems(options, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int item) {
-                if (options[item].equals("Take Photo")) {
+                if (options[item].equals(getStringFromResource(R.string.take_photo))) {
                     Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                     File f = new File(android.os.Environment.getExternalStorageDirectory(), "temp.jpg");
                     intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
                     startActivityForResult(intent, 1);
-                } else if (options[item].equals("Choose from Gallery")) {
+                } else if (options[item].equals(getStringFromResource(R.string.choose_gallery))) {
                     Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
                     startActivityForResult(intent, 2);
-                } else if (options[item].equals("Cancel")) {
+                } else if (options[item].equals(getStringFromResource(R.string.cancel))) {
                     dialog.dismiss();
                 }
             }
@@ -363,6 +436,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void somethingWentWrong() {
+        showToast(getStringFromResource(R.string.something_wrong));
     }
 
     String picturePath = null;
